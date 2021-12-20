@@ -18,3 +18,4 @@ DESABILITA_VENDA = True                         # somente operacões de compra (
 
 O resultado do backtest é armazenado em arquivo txt de formato Resultado_ANO_MES_DIA_HORA_MINUTO.txt (ex. Resultado_2021_19_12_21_16_10.txt)
 
+NOTA: SÓ FUNCIONA PARA TIMEFRAME DIÁRIO.
