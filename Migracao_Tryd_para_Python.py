@@ -7,6 +7,7 @@ import sys
 #  DATA: dez/2021
 #  ESSE SCRIPT LE OS ARQUIVOS DO TRYD E GERA 
 #  A TABELA DE DADOS PARA USAR NOS SCRIPT QuantLarryWilliansSetup3Medias.py
+#  VERSÃO: 1.0.1 (25.12.21) - cirrigido bug gaps de alta/baixa
 ############################################################################################
  
 
@@ -15,7 +16,7 @@ def ConverteArquivosTryd(listaAtivos, linhasLidas):
     print("Convertendo dados _Tryd.csv para dataframe Python (_Python.csv...)")
      
     # colunas padrão
-    colunas_Tryd_Basica = ['Data','Fechamento','Máxima','Mínima']     # as colunas essenciais são DATA, FECHAMENTO, MAXIMA E MINIMA
+    colunas_Tryd_Basica = ['Data','Abertura','Fechamento','Máxima','Mínima']     # as colunas essenciais são DATA, FECHAMENTO, MAXIMA E MINIMA
     
     # caso leitura de colunas adicionais
     colunas_Tryd_Extra  = ['Data','Hora','Fechamento','Máxima','Mínima'] 
