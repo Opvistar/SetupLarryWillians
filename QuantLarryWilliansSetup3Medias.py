@@ -2,6 +2,15 @@
 # Autor: @opvistar (Twitter) - dez.2021                                       #
 # SETUP LARRY WILLIANS 3 MÉDIAS MÓVEIS                                        #
 # DESCRIÇÃO DO SETUP : https://www.youtube.com/watch?v=QXzkrR-dX1E            #
+# VERSÃO: 1.2.0 (25.12.21)                                                    #
+# HISTORICO ALTERACOES                                                        #
+# 1.1.0 - adicionei nova feature, agora salva CSV para visualizar no Excel    #
+# entretanto o cabeçalho tem que ser inserido manualmente.                    #
+# separador é ";"                                                             #
+# 1.2.0 - (a) agora verifica se abriu em gap acima ou abaixo das SMA3min#     #
+# e SMA3max# # tomando cuidado pra comprar na abertura se preço não cruza     #
+# essas médias (b) desabiilitei o código da operação de VENDA                 # 
+#                                                                             #
 #==============================================================================
 
 import datetime
@@ -13,6 +22,7 @@ pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
+import csv
 
 
 ###################################################################################################################################
@@ -24,10 +34,10 @@ pd.set_option('display.max_colwidth', None)
    
 
 #############     PARÂMETROS DE CONFIGURACAO     ################
-LISTA_B3 = {"TAEE11","ENBR3", "ITSA4","TRPL4"}  # lista de ativos que vou pegar os dados (TICKER DA B3!!)
+LISTA_B3 = {"WIN"}     # lista de ativos que vou pegar os dados (TICKER DA B3!!)
 PERIODOS_SMA = 21
-NUMERO_DE_DIAS = 600     # qtdade dias que vai pegar do histórico do Tryd
-DESABILITA_VENDA = True  # somente operacões de compra = True
+NUMERO_DE_DIAS = 2000     # qtdade dias que vai pegar do histórico do Tryd
+#DESABILITA_VENDA = True   # somente operacões de compra = True
 ###############################################################  
 
 
@@ -52,7 +62,7 @@ for ativo in LISTA_B3:
  
      file_name_py  =  ativo + "_python.csv"
      lSucesso = True
-     ativo_python = pd.DataFrame(columns = ["Data", "Fechamento","Maxima","Minima"])    
+     ativo_python = pd.DataFrame(columns = ["Data","Abertura", "Fechamento","Maxima","Minima"])    
      
      try:         
          ativo_python = pd.read_csv(file_name_py, encoding = "ISO-8859-1")
@@ -73,7 +83,8 @@ print('\n')
 #######################  INICIO DO ALGORITMO #####################
 ##################################################################
 # itero sobre lista de ativos
-
+nome_arquivo = "Resultado_" + datetime.datetime.now().strftime('%Y_%d_%m_%H_%M_%S') + ".txt"
+file_relat = open( nome_arquivo, "a")  # DEBUG
 if dict_ativos_precos:
 
 
@@ -82,9 +93,9 @@ if dict_ativos_precos:
         # inverto as linhas (de forma que linha 0 fique por ultimo e ultima linha por primeiro)   
         vx_preco  = vx_preco[::-1]
         
-        sma21 = vx_preco['Fechamento'].rolling(window=21).mean()
-        sma3_max = vx_preco['Maxima'].rolling(window=3 ).mean()
-        sma3_min = vx_preco['Minima'].rolling(window=3 ).mean()
+        sma21 = vx_preco['Fechamento'].rolling(window = PERIODOS_SMA).mean()
+        sma3_max = vx_preco['Maxima'].rolling(window = 3 ).mean()
+        sma3_min = vx_preco['Minima'].rolling(window = 3 ).mean()
         
         # comeca do ultimo para o 1o
         # só encerro a operação no outro dia, pois não sei se abriu e bateu na SMA3_max primeiro ou na SMA3_min primeiro, só 
@@ -95,8 +106,9 @@ if dict_ativos_precos:
         l_sma21      = sma21.tolist()
         l_sma3_max   = sma3_max.tolist()
         l_sma3_min   = sma3_min.tolist()
-        l_preco_Max  =  vx_preco['Maxima'].tolist()        
-        l_preco_Min  = vx_preco['Minima'].tolist()
+        l_preco_max  =  vx_preco['Maxima'].tolist()        
+        l_preco_min  = vx_preco['Minima'].tolist()
+        l_preco_abe  = vx_preco['Abertura'].tolist()        
         l_preco_Data = vx_preco['Data'].tolist()
 
         for x in range(PERIODOS_SMA + 1,len(l_preco_Data), 1):
@@ -114,49 +126,78 @@ if dict_ativos_precos:
             if( saida != -1):
 
                 ## VERIFICO SE A MEDIA MOVEL TA SUBINDO...
-                if( (l_preco_Min[x] <= l_sma3_min[x]) and  l_sma21[x-1] > l_sma21[x-2] ): 
+                if( (l_preco_min[x] < l_sma3_min[x]) and  l_sma21[x-1] > l_sma21[x-2] ): 
 
-                    # efetua a compra do ativo
-                    # incializa nova linha (NOVA OPERACAO)
-                    historico.append( [l_preco_Data[x],"",l_sma3_min[x],-1,0,acumulado,"COMPRA"] )
+                    # tenho que verificar se abriu em gap de baixa, as vezes abriu em gap e a máxima do dia ainda está abaixo da SMA3min.
+                    # ai entrada é na abertura
+                    if( l_preco_max[x] < l_sma3_min[x]): 
+                       historico.append( [l_preco_Data[x],"",l_preco_abe[x],-1,0,acumulado,"COMPRA"] )
+                    else:
+                    # neste caso efetua a compra do ativo quando cruza SMA3min 
+                        historico.append( [l_preco_Data[x],"",l_sma3_min[x],-1,0,acumulado,"COMPRA"] )
 
-                ## VERIFICO SE A MEDIA MOVEL TA DESCENDO...
-                elif( (l_preco_Max[x] >= l_sma3_max[x]) and  l_sma21[x-1] > l_sma21[x-2] and not DESABILITA_VENDA): 
-                    # efetua a venda do ativo
-                    # incializa nova linha (NOVA OPERACAO)
-                    historico.append( [l_preco_Data[x],"",l_sma3_max[x],-1,0,acumulado,"VENDA"] ) 
+                # ## VERIFICO SE A MEDIA MOVEL TA DESCENDO...
+                # elif( (l_preco_max[x] > l_sma3_max[x]) and  l_sma21[x-1] > l_sma21[x-2] and not DESABILITA_VENDA): 
+                #     # efetua a venda do ativo
+                #     # incializa nova linha (NOVA OPERACAO)
+                #     historico.append( [l_preco_Data[x],"",l_sma3_max[x],-1,0,acumulado,"VENDA"] ) 
                     
             # operacao em aberto, verifica se pode encerrar                    
             else:    
                 # agora verifico se algum dos criterios foram atendidos...
                  elemento_historico = historico[len(historico)-1]    
                  
-                 if( l_preco_Max[x] >= l_sma3_max[x] and elemento_historico[TIPO] == "COMPRA"):
+                 if( l_preco_max[x] >= l_sma3_max[x] and elemento_historico[TIPO] == "COMPRA"):
                     # encerra a operaçã0 de compra
 
-                    elemento_historico[SAIDA] = l_sma3_max[x]
+                    # tenho que verificar se abriu em gap de alta, as vezes abriu em gap e a mínima do dia ainda está acima do SMA3max.
+                    # ai saida é na abertura
+                    if( l_preco_min[x] > l_sma3_max[x]): 
+                        elemento_historico[SAIDA] = l_preco_abe[x]
+                        # média SMA3max cruza o preço logo
+                    else:
+                        elemento_historico[SAIDA] = l_sma3_max[x]
+                        
                     elemento_historico[DATA_SAI] = l_preco_Data[x]
                     elemento_historico[RESULTADO] = elemento_historico[SAIDA] - elemento_historico[ENTRADA]
                     elemento_historico[ACUMULADO] = elemento_historico[ACUMULADO] + elemento_historico[RESULTADO]
                     historico[len(historico)-1] = elemento_historico
                     
-                 elif( l_preco_Min[x] <= l_sma3_min[x] and elemento_historico[TIPO] == "VENDA" and not DESABILITA_VENDA):
-                    # encerra a operação de venda     
+                 # elif( l_preco_min[x] <= l_sma3_min[x] and elemento_historico[TIPO] == "VENDA" and not DESABILITA_VENDA):
+                 #    # encerra a operação de venda     
                     
-                    elemento_historico[SAIDA] = l_sma3_min[x]
-                    elemento_historico[DATA_SAI] = l_preco_Data[x]
-                    elemento_historico[RESULTADO] = elemento_historico[ENTRADA] - elemento_historico[SAIDA]
-                    elemento_historico[ACUMULADO] = elemento_historico[ACUMULADO] + elemento_historico[RESULTADO]
-                    historico[len(historico)-1] = elemento_historico                    
+                 #    elemento_historico[SAIDA] = l_sma3_min[x]
+                 #    elemento_historico[DATA_SAI] = l_preco_Data[x]
+                 #    elemento_historico[RESULTADO] = elemento_historico[ENTRADA] - elemento_historico[SAIDA]
+                 #    elemento_historico[ACUMULADO] = elemento_historico[ACUMULADO] + elemento_historico[RESULTADO]
+                 #    historico[len(historico)-1] = elemento_historico                    
 
-        nome_arquivo = "Resultado_" + datetime.datetime.now().strftime('%Y_%d_%m_%H_%M_%S') + ".txt"
-        file_relat = open( nome_arquivo, "a")  # DEBUG
+
+
+
 
         print('\n',file=file_relat)        
         print("Resultados para o ativo :" + kx_ativo +'\n',file=file_relat )
         tabela = pd.DataFrame(historico,columns=['DATA_EN', 'DATA_SAI', 'ENTRADA','SAIDA','RESULTADO','ACUMULADO','TIPO'])
         print('==================================================================================================',file=file_relat)       
         print(tabela.round(decimals=2),file=file_relat)
+        
+        historico_csv = [ ]
+        for x in range(0,len(historico), 1): 
+            elemento_historico = historico[x] 
+            elemento_historico[SAIDA]     = str(round(elemento_historico[SAIDA],2)).replace('.',',')
+            elemento_historico[ENTRADA]   = str(round(elemento_historico[ENTRADA],2)).replace('.',',')
+            elemento_historico[RESULTADO] = str(round(elemento_historico[RESULTADO],2)).replace('.',',')
+            elemento_historico[ACUMULADO] = str(round(elemento_historico[ACUMULADO],2)).replace('.',',')
+            historico_csv.append(elemento_historico)
+            
+        with open("Planilha_"+ kx_ativo +"_"+ datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S') + '.csv', 'w', newline='\n') as csvfile:
+            writer = csv.writer(csvfile)
+            csvwriter = csv.writer(csvfile,delimiter =';')
+            # 'Numerador','Denominador','Preço_NUM','Preço_DEN','Ratio_Ult' 'Ratio Inst' 'Ratio_medio','Ratio_2D_minus','Ratio_2D_plus','Ratio_3D_minus','Ratio_3D_plus','Ratio_4D_minus','Ratio_4D_plus' 
+            csvwriter.writerows(historico_csv)        
+        
+        
         
 print("Backtest conluído, verifique o arquivo " + nome_arquivo)    
 file_relat.close()    
