@@ -1,18 +1,19 @@
 import pandas as pd
 import sys
-
-############################################################################################
-############################################################################################
+import os as os
+#############################################################################################
+#############################################################################################
 #  AUTOR: @opvistar (Twitter)
 #  DATA: dez/2021
-#  ESSE SCRIPT LE OS ARQUIVOS DO TRYD E GERA 
+#  ESSE SCRIPT LE OS ARQUIVOS DO TRYD E GERA (NÃO É PRA SER EXECUTADO, CHAMADO PELO SCRIPT
+#  DO LW CLÁSSICO)
 #  A TABELA DE DADOS PARA USAR NOS SCRIPT QuantLarryWilliansSetup3Medias.py
-#  VERSÃO: 1.0.1 (25.12.21) - cirrigido bug gaps de alta/baixa
+#  VERSÃO: 1.1.0 (30.12.21) - FINAL
 ############################################################################################
  
 
-def ConverteArquivosTryd(listaAtivos, linhasLidas):
-    
+def ConverteArquivosTryd(listaAtivos, linhasLidas,dir_entrada,dir_saida):
+ 
     print("Convertendo dados _Tryd.csv para dataframe Python (_Python.csv...)")
      
     # colunas padrão
@@ -29,13 +30,17 @@ def ConverteArquivosTryd(listaAtivos, linhasLidas):
         #str_path_tryd = "C:\\Users\\rgiovann\\OneDrive\\AULAS\Bagozzi\\PYTHON_SOURCE\\FINANCAS_QUANTITATIVAS\\Database_Tryd_Semanal\\"+ ativo + "_tryd.csv"
         
         # diario
-        str_path_tryd = ativo + "_Tryd.csv" 
+        str_path_tryd = os.path.join(os.getcwd(), dir_entrada,ativo + "_Tryd.csv" )
+        
+        #str_path_tryd = ativo + "_Tryd.csv" 
     
         # semanal    
         #str_path_py  = "C:\\Users\\rgiovann\\OneDrive\\AULAS\Bagozzi\\PYTHON_SOURCE\\FINANCAS_QUANTITATIVAS\\Database_Python_Semanal\\"+ ativo + "_python.csv"
         
         #diario
-        str_path_py  = ativo + "_python.csv"
+        str_path_py = os.path.join(os.getcwd(), dir_saida,ativo + "_Python.csv" )
+        
+        #str_path_py  = ativo + "_python.csv"
            
         try:
             precos = pd.read_csv(str_path_tryd,encoding = "ISO-8859-1")
