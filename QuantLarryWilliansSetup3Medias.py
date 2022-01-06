@@ -46,7 +46,7 @@ def round_up(n, decimals=0):
     multiplier = 10 ** decimals
     return math.ceil(n * multiplier) / multiplier
 
-# ESTIMA O MELHOR VALOR PARA ENTRAR CASO USE A FUNCAO "estimaEntradaouAlvo" que é
+# ESTIMA O MELHOR VALOR PARA ENTRAR CASO USE A FUNCAO "estimaEntradaou Alvo" que é
 # UM VALOR QUEBRADO E PODE NÃO REPRESENTAR UM VALOR REAL DO ATIVO
 def converteValorMediaCurta(valor,lUp,tipo_ativo):
     if (tipo_ativo == WDO_DOLAR ):
@@ -110,10 +110,11 @@ def converteValorMediaCurta(valor,lUp,tipo_ativo):
 # lista de ativos
 # NAO PODE MISTURAR DOLAR COM INDICE COM AVISTA (só um tipo)
 #LISTA_B3 = {"VALE3","BBSA3","MFRG3","ENBR3",'VIVT3'}     # lista de ativos que vou pegar os dados (TICKER DA B3!!)
-LISTA_B3 = {"WINFUT" }     # lista de ativos que vou pegar os dados (TICKER DA B3!!)
+
+LISTA_B3 = {"VIVT3" }     # lista de ativos que vou pegar os dados (TICKER DA B3!!)
 
 # período das médias longas
-MEDIA_LONGA   = 21# parametro média longa
+MEDIA_LONGA   = 21   # parametro média longa
  
 # qtdade de candles que vai pegar do histórico do Tryd
 NUMERO_DE_CANDLES = 10000     
@@ -136,18 +137,18 @@ WDO_DOLAR = 0
 WIN_INDICE = 1
 A_VISTA = 2
 
-# não mexer
-UP = True
-DOWN = False
+#  
+UP = True       # CALCULA THRESHOLD PARA MEDIA CURTA MAXIMA
+DOWN = False    # CALCULA THRESHOLD PARA MEDIA CURTA MINIMA
 
- 
-# Periodo dos candles possíveis
-CANDLE_DIARO = 0
 
 # tipo de ativos
-TIPO_ATIVO = WIN_INDICE         # 0: FUTURO DOLAR, 
+# CADA ATIVO TEM UMA FORMA DE CALCULAR O THRESHOLD DE ENTRADA E 
+# SAIDA --- CONFIGURAR DE ACORDO
 
-#TIPO_ATIVO = A_VISTA         # 0: FUTURO DOLAR, 
+#TIPO_ATIVO = WIN_INDICE         # 0: FUTURO DOLAR, 
+
+TIPO_ATIVO = A_VISTA         # 0: FUTURO DOLAR, 
                              # 1: FUTURO INDICE 
                              # 2: A VISTA (necessário para arendondar os thresholds de saida)                       
 CASAS_DECIMAIS = 2  
@@ -260,8 +261,8 @@ if dict_ativos_precos:
                     
                     premissa1b = False # HabilitaEntrada(l_preco_abe[x],l_preco_min[x-1],l_preco_min[x-2],DOWN)
                                       
-                    # premissa2a =  True  
-                    premissa2a =  l_sma21[x-1] < l_sma21[x] #and  l_sma21[x-2] < l_sma21[x-1] 
+                    premissa2a =  True  
+                    #premissa2a =  l_sma21[x-1] < l_sma21[x] #and  l_sma21[x-2] < l_sma21[x-1] 
 
                     premissa7 = TIPO_OPERACAO == EH_COMPRA or TIPO_OPERACAO == EH_COMPRA_E_VENDA
     
@@ -287,8 +288,8 @@ if dict_ativos_precos:
                     
                     premissa1b = False # HabilitaEntrada(l_preco_abe[x],l_preco_max[x-1],l_preco_max[x-2],UP)
 
-                    #premissa2a =  True  
-                    premissa2a =  l_sma21[x] < l_sma21[x-1] #and l_sma21[x-1] < l_sma21[x-2] 
+                    premissa2a =  True  
+                    #premissa2a =  l_sma21[x] < l_sma21[x-1] #and l_sma21[x-1] < l_sma21[x-2] 
        
                     premissa7 = TIPO_OPERACAO == EH_VENDA or TIPO_OPERACAO == EH_COMPRA_E_VENDA
                     
